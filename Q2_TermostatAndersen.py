@@ -51,7 +51,13 @@ Atoms = []
 p = []
 apos = []
 pavg = sqrt(2*mass*1.5*k*T) # average kinetic energy p**2/(2mass) = (3/2)kT
-    
+
+# Modificació Termostat Andersen (Gemini Marc)
+# --- Paràmetres del Termostat d'Andersen ---
+nu = 500  # Freqüència de col·lisió amb el bany tèrmic (ajustable)
+prob_bany = nu * dt  # Probabilitat de xocar en un interval dt
+sigma_p = sqrt(mass * k * T)  # Desviació estàndard del moment: sqrt(m*k*T)
+
 for i in range(Natoms):
     x = L*random()-L/2
     y = L*random()-L/2
@@ -112,6 +118,32 @@ def checkCollisions():
 nhisto = 0 # number of histogram snapshots to average
 
 while True:
+    # Modificació Termostat Andersen (Gemini Marc)
+    # --- Aplicació del Termostat d'Andersen ---
+    for i in range(Natoms):
+        if random() < prob_bany:
+            v_antic = p[i].mag / mass
+                
+            # Generació de components del moment amb distribució gaussiana (Box-Muller)
+            u1 = 1.0 - random() # Evitem el log(0)
+            u2 = random()
+            u3 = 1.0 - random()
+            u4 = random()
+                
+            z0 = sqrt(-2.0 * log(u1)) * cos(2 * pi * u2)
+            z1 = sqrt(-2.0 * log(u1)) * sin(2 * pi * u2)
+            z2 = sqrt(-2.0 * log(u3)) * cos(2 * pi * u4)
+                
+            # Reassignem el moment de la partícula interaccionada
+            p[i].x = sigma_p * z0
+            p[i].y = sigma_p * z1
+            p[i].z = sigma_p * z2
+                
+            # Actualitzem l'histograma de velocitats
+            v_nou = p[i].mag / mass
+            interchange(v_antic, v_nou)
+
+
     rate(300)
     # Accumulate and average histogram snapshots
     for i in range(len(accum)): accum[i][1] = (nhisto*accum[i][1] + histo[i])/(nhisto+1)
