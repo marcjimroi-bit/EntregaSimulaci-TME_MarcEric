@@ -8,13 +8,15 @@ from vpython import *
 win = 500
 
 Natoms = 500  # change this to have more or fewer atoms
-# Durant la duració completa d'aquesta part, fixem Natoms = 500 (enunciat)
+    # Durant la duració completa d'aquesta part, fixem Natoms = 500 (enunciat)
+    # Sembla donar problemes de computació en la simulació (molt lent)
 
 # Typical values
 L = 1 # container is a cube L on a side
 gray = color.gray(0.7) # color of edges of container
 mass = 4E-3/6E23 # helium mass
-Ratom = 0.03 # wildly exaggerated size of helium atom
+Ratom = 0.05 # wildly exaggerated size of helium atom
+    # Original Ratom = 0.03
 k = 1.4E-23 # Boltzmann constant
 T = 300 # around room temperature
 dt = 1E-5
