@@ -13,14 +13,14 @@ e3 = 10
 energies = np.array([e1,e2,e3])      # Nivells d'energia considerats (\epsilon = 1)
 
 # Definim un array per l'estat de N partícules, que inicialment estan repartides amb igual probabilitat entre cada nivell (probabilitat = 1/3)
-estats = np.random.choice([e1,e2,e3],N)
+estats = np.random.choice([0,1,10],N)
 
 # 1) REGLA DE METROPOLIS
     # El sistema evolucionarà segons com les partícules augmentin o disminueixin la seva energia (\Delta E)
         # Tendència generalitzada a reduir la seva energia (\Delta E < 0)
         # Bany tèrmic augmenta energia (\Delta E > 0); salts grans molt menys probables que petits.
 
-def pas_metropolis(estats, nivells, beta):
+def pas_metropolis(estats, energies, beta):
     
     # a) Escollim una partícula aleatòriament
     i = np.random.randint(0,N)
@@ -40,4 +40,23 @@ def pas_metropolis(estats, nivells, beta):
         estats[i] = nivell_després 
 
     return estats
+
+# Apliquem la funció anterior i simulem els passos fins assolir un estat d'equilibri
+n_pas = 1000
+for j in range(n_pas):
+    estats = pas_metropolis(estats, energies, beta)
+
+# 2) OCUPACIÓ MITJANA
+    # Un cop assolit l'equilibri mesurem la ocupació de cada nivell
+num_niv = np.zeros(3)
+mesures = 10000         # Ha de ser un valor gran per tal d'estudiar estats d'equilibri
+
+for j in range(mesures):
+    estats = pas_metropolis(estats, energies, beta)
+    for nivell in range(3):
+        num_niv[nivell] += np.sum(estats == nivell)
+
+# Normnalitzem les mesures respecte el total
+avg_occupation = num_niv / (mesures * N)
+print(avg_occupation)
 
