@@ -8,8 +8,8 @@ import math
 
 # Paràmetres inicials
 N = 1000
-T_0 =300        # Temperatura inicial de prova (K)
-k_B = 1         # Per simplicitat. Físicament, constant de Boltzmann = 1.380649e-23 J K^-1
+T_0 =300                # Temperatura inicial de prova (K)
+k_B = 1.380649e-23      # Constant de Boltzmann (J K^-1)
 beta = 1/(k_B * T_0)
 energies = np.array([0,1,10])      # Nivells d'energia considerats (\epsilon = 1)
 
@@ -67,9 +67,26 @@ print(avg_occupation)
 # (2) ESTUDI EN FUNCIÓ DE LA TEMPERATURA
 # Definim un conjunt de valors equiespaiats de temperatura que cobreixin un rang prou gran per tal d'estudiar-ne la dependència.
 energies = np.array([0,1,10])           # Respecte \epsilon
-temps = np.linspace(0.1, 100, 100)       # k_B = 1 implica \beta = 1/T, i [T] = energia
+k_B = 1                                 # Per simplicitat. k_B = 1 implica \beta = 1/T, i [T] = energia
+temps = np.linspace(0.1, 100, 100)      # Conjunt de valors de temperatura (k_B*T) estudiats
 # Emmagatzemem els resultats obtinguts per les ocupacions mitjanes a cada nivell per cada temperatura
 ocupacions = []
+
+# Busquem quants passos de la simulació són adequats per assolir un estat d'equilibri en un cas concret a T=T_test i extrapolem a la resta
+T_test = 1.0
+beta = 1 / (k_B * T_test)
+estats = np.random.randint(0, 3, size=N)
+occupacions_test = []
+
+for j in range(50000):
+    estats = pas_metropolis(estats, energies, beta)
+    occupacions_test.append(np.sum(estats == 0) / N)
+
+plt.plot(occupacions_test)
+plt.ylim(0,1)
+plt.xlabel("Nombre de passos")
+plt.ylabel(r'Ocupació del nivell $E_1=0$')
+plt.show()
 
 # A) SIMULACIONS DEL SISTEMA PER CADA VALOR DE TEMPERATURA
 for T in temps:
@@ -79,7 +96,7 @@ for T in temps:
     estats = np.random.randint(0, 3, size=N)
 
     # Simulem l'evolució del sistema mitjançant la funció definida segons la regla de Metropolis fins assolir l'equilibri
-    n_pas = 1000
+    n_pas = 5000
     for j in range(n_pas):
         estats = pas_metropolis(estats, energies, beta)
 
