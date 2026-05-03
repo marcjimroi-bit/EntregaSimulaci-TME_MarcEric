@@ -77,7 +77,7 @@ temps = np.concatenate([
 # Emmagatzemem els resultats obtinguts per les ocupacions mitjanes a cada nivell per cada temperatura
 ocupacions = []
 
-# B) ESTIMACIÓ DE L'ASSOLIMENT DE L'EQUILIBRI
+# A) ESTIMACIÓ DE L'ASSOLIMENT DE L'EQUILIBRI
 # Busquem quants passos de la simulació són adequats per assolir un estat d'equilibri en un cas concret a T=T_test i extrapolem a la resta
 t_test = 1.0
 beta = 1 / (k_B * t_test)
@@ -139,6 +139,75 @@ plt.xlabel(r'$t\equiv\frac{Tk_B}{\epsilon}$')
 plt.ylabel("Ocupació mitjana")
 plt.legend()
 plt.show()
+
+
+# ====================================================================================
+# (3) ESTUDI DE LES FLUCTUACIONS ENERGÈTIQUES EN FUNCIÓ DE N
+# Fixem la temperatura d'estudi t_a
+t_a = 5.0
+
+energies = np.array([0, 1, 10])
+
+# Definim un conjunt de valors de N
+Ns = [50, 100, 200, 500, 1000]
+
+mitj_E = []
+var_E = []
+
+# Simulem el sistema per cada valor de N
+for N in Ns:
+
+    # Establim l'estat incial
+    estats = np.random.randint(0, 3, size=N)
+
+    # Simulem l'evolució del sistema mitjançant la funció definida segons la regla de Metropolis fins assolir l'equilibri
+    n_pas = 10000
+    for _ in range(n_pas):
+        estats = pas_metropolis(estats, energies, beta)
+
+    # Mesurem les ocupacions dels nivells
+    mesures = 10000
+    E_vals = []
+    for _ in range(mesures):
+        estats = pas_metropolis(estats, energies, beta)
+
+        # Definim l'energia total a partir de les contribucions de cada nivell
+        E_total = np.sum(energies[estats])
+        E_vals.append(E_total)
+
+    E_vals = np.array(E_vals)
+
+    # Calculem el valor mitjà i variància de l'energia
+    mitj_E.append(np.mean(E_vals))
+    var_E.append(np.var(E_vals))  # variance = fluctuations
+
+# B) Representació gràfica dels resultats
+# i) Energia mitjana en funció de N
+plt.plot(Ns, mitj_E, 'o-')
+plt.tick_params(direction='in')
+plt.xlabel("N")
+plt.ylabel(r'$\langle E \rangle$')
+plt.grid(True)
+plt.show()
+
+# ii) Variància / fluctuació de l'energia en funció de N
+plt.plot(Ns, var_E, 'o-')
+plt.tick_params(direction='in')
+plt.xlabel("N")
+plt.ylabel(r'$\sigma_E^2$')
+plt.grid(True)
+plt.show()
+
+# iii) Fluctuació RELATIVA de l'energia en funció de N
+fluct_rel = np.sqrt(var_E) / np.array(mitj_E)
+
+plt.plot(Ns, fluct_rel, 'o-')
+plt.tick_params(direction='in')
+plt.xlabel("N")
+plt.ylabel(r'$\sigma_E / \langle E \rangle$')
+plt.grid(True)
+plt.show()
+
 
 # ------------------------------------------------------------------------------------
 # END: Missatge final simulació
