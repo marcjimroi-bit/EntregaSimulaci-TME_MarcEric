@@ -67,14 +67,20 @@ print(avg_occupation)
 # (2) ESTUDI EN FUNCIÓ DE LA TEMPERATURA
 # Definim un conjunt de valors equiespaiats de temperatura que cobreixin un rang prou gran per tal d'estudiar-ne la dependència.
 energies = np.array([0,1,10])           # Respecte \epsilon
+epsilon = 1                             # Per simplicitat, \epsilon = 1
 k_B = 1                                 # Per simplicitat. k_B = 1 implica \beta = 1/T, i [T] = energia
-temps = np.linspace(0.1, 100, 100)      # Conjunt de valors de temperatura (k_B*T) estudiats
+# Conjunt de valors de temperatura (k_B*T) estudiats. 
+temps = np.concatenate([
+    np.linspace(0.05, 5, 50),   # Molta densitat de punts a temperatures baixes (prop de t_c)
+    np.linspace(5, 500, 50)     # Menys densitat de punts a temperatures molt altes
+])
 # Emmagatzemem els resultats obtinguts per les ocupacions mitjanes a cada nivell per cada temperatura
 ocupacions = []
 
+# B) ESTIMACIÓ DE L'ASSOLIMENT DE L'EQUILIBRI
 # Busquem quants passos de la simulació són adequats per assolir un estat d'equilibri en un cas concret a T=T_test i extrapolem a la resta
-T_test = 1.0
-beta = 1 / (k_B * T_test)
+t_test = 1.0
+beta = 1 / (k_B * t_test)
 estats = np.random.randint(0, 3, size=N)
 occupacions_test = []
 
@@ -82,21 +88,27 @@ for j in range(50000):
     estats = pas_metropolis(estats, energies, beta)
     occupacions_test.append(np.sum(estats == 0) / N)
 
-plt.plot(occupacions_test)
+plt.plot(occupacions_test, color = 'darkred')
 plt.ylim(0,1)
+plt.tick_params(direction='in')
+plt.grid(True)
 plt.xlabel("Nombre de passos")
 plt.ylabel(r'Ocupació del nivell $E_1=0$')
 plt.show()
 
-# A) SIMULACIONS DEL SISTEMA PER CADA VALOR DE TEMPERATURA
-for T in temps:
-    beta = 1 / (k_B * T)
+# Estimació de la temperatura crítica del problema 35 T_c
+t_c = 10*epsilon/(k_B*math.log(N))
+print(t_c)
+
+# B) SIMULACIONS DEL SISTEMA PER CADA VALOR DE TEMPERATURA
+for t in temps:
+    beta = 1 / (t)
 
     # Establim l'estat inicial
     estats = np.random.randint(0, 3, size=N)
 
     # Simulem l'evolució del sistema mitjançant la funció definida segons la regla de Metropolis fins assolir l'equilibri
-    n_pas = 5000
+    n_pas = 10000
     for j in range(n_pas):
         estats = pas_metropolis(estats, energies, beta)
 
@@ -112,13 +124,18 @@ for T in temps:
     avg_occ = num_niv / (mesures * N)
     ocupacions.append(avg_occ)
 
-# B) REPRESENTACIÓ GRÀFICA DELS RESULTATS ANTERIORS
+# Representació gràfica dels nivells d'ocupació per cada T
 resultats_ocup = np.array(ocupacions)
 
-for nivell in range(3):
-    plt.plot(temps, resultats_ocup[:, nivell], label=f"Nivell {nivell}")
-
-plt.xlabel(r'$T$ (K)')
+plt.plot(temps, resultats_ocup[:, 0], label=r'$E_1=0$', color = 'darkred')
+plt.plot(temps, resultats_ocup[:, 1], label=r'$E_2=\epsilon$', color = 'darkgreen')
+plt.plot(temps, resultats_ocup[:, 2], label=r'$E_3=10\epsilon$', color = 'darkblue')
+plt.axvline(x=t_c, linestyle=':', color='black', alpha = 1, label=r'$t_{\mathrm{c}}=1$')
+plt.axhline(y=1/3, linestyle='--', color='black', alpha = 0.25)
+plt.tick_params(direction='in')
+plt.xscale('log')           # Per diferenciar t_c
+plt.grid(True)
+plt.xlabel(r'$t\equiv\frac{Tk_B}{\epsilon}$')
 plt.ylabel("Ocupació mitjana")
 plt.legend()
 plt.show()
