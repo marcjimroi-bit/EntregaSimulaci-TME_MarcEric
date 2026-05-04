@@ -5,6 +5,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+from scipy.optimize import curve_fit
 
 # Paràmetres inicials
 N = 1000
@@ -22,7 +23,7 @@ estats = np.random.randint(0, 3, size=N)
     # El sistema evolucionarà segons com les partícules augmentin o disminueixin la seva energia (\Delta E)
         # Tendència generalitzada a reduir la seva energia (\Delta E < 0)
         # Bany tèrmic augmenta energia (\Delta E > 0); salts grans molt menys probables que petits.
-def pas_metropolis(estats, energies, beta):
+def pas_metropolis(estats, energies, beta, N):
     
     # i) Escollim una partícula aleatòriament
     i = np.random.randint(0,N)
@@ -47,7 +48,7 @@ def pas_metropolis(estats, energies, beta):
 # Apliquem la funció anterior i simulem els passos fins assolir un estat d'equilibri
 n_pas = 1000
 for j in range(n_pas):
-    estats = pas_metropolis(estats, energies, beta)
+    estats = pas_metropolis(estats, energies, beta, N)
 
 # Ocupació mitjana en l'equilibri: Definim un nombre molt gran de mesures, les quals aplicarem a estats d'equilibri
 num_niv = np.zeros(3)
@@ -55,7 +56,7 @@ mesures = 10000
 
 # Un cop assolit l'equilibri (evolució anterior), seguim evolucionant el sistema (ara en equilibri) i mesurem la ocupació de cada nivell
 for j in range(mesures):
-    estats = pas_metropolis(estats, energies, beta)
+    estats = pas_metropolis(estats, energies, beta, N)
     for nivell in range(3):
         num_niv[nivell] += np.sum(estats == nivell)
 # Normalitzem les mesures respecte el total
@@ -85,7 +86,7 @@ estats = np.random.randint(0, 3, size=N)
 occupacions_test = []
 
 for j in range(50000):
-    estats = pas_metropolis(estats, energies, beta)
+    estats = pas_metropolis(estats, energies, beta, N)
     occupacions_test.append(np.sum(estats == 0) / N)
 
 plt.plot(occupacions_test, color = 'darkred')
@@ -110,14 +111,14 @@ for t in temps:
     # Simulem l'evolució del sistema mitjançant la funció definida segons la regla de Metropolis fins assolir l'equilibri
     n_pas = 10000
     for j in range(n_pas):
-        estats = pas_metropolis(estats, energies, beta)
+        estats = pas_metropolis(estats, energies, beta, N)
 
     # Mesurem les ocupacions dels nivells (un nombre gran de mesures permet mantenir-nos en condicions d'equilibri)
     num_niv = np.zeros(3)
     mesures = 10000
     # Mesures de les ocupacions de cada nivell per iteracions en condicions d'equilibri
     for j in range(mesures):
-        estats = pas_metropolis(estats, energies, beta)
+        estats = pas_metropolis(estats, energies, beta, N)
         for nivell in range(3):
             num_niv[nivell] += np.sum(estats == nivell)
     # Normalització
@@ -145,11 +146,12 @@ plt.show()
 # (3) ESTUDI DE LES FLUCTUACIONS ENERGÈTIQUES EN FUNCIÓ DE N
 # Fixem la temperatura d'estudi t_a
 t_a = 5.0
+beta = 1/t_a
 
 energies = np.array([0, 1, 10])
 
 # Definim un conjunt de valors de N
-Ns = [50, 100, 200, 500, 1000]
+Ns = np.linspace(10,2000,20)
 
 mitj_E = []
 var_E = []
@@ -158,18 +160,18 @@ var_E = []
 for N in Ns:
 
     # Establim l'estat incial
-    estats = np.random.randint(0, 3, size=N)
+    estats = np.random.randint(0, 3, size=int(N))
 
     # Simulem l'evolució del sistema mitjançant la funció definida segons la regla de Metropolis fins assolir l'equilibri
     n_pas = 10000
     for _ in range(n_pas):
-        estats = pas_metropolis(estats, energies, beta)
+        estats = pas_metropolis(estats, energies, beta, int(N))
 
     # Mesurem les ocupacions dels nivells
-    mesures = 10000
+    mesures = 100000
     E_vals = []
     for _ in range(mesures):
-        estats = pas_metropolis(estats, energies, beta)
+        estats = pas_metropolis(estats, energies, beta, int(N))
 
         # Definim l'energia total a partir de les contribucions de cada nivell
         E_total = np.sum(energies[estats])
@@ -181,32 +183,64 @@ for N in Ns:
     mitj_E.append(np.mean(E_vals))
     var_E.append(np.var(E_vals))  # variance = fluctuations
 
+mitj_E = np.array(mitj_E)
+var_E = np.array(var_E)
+
+# Define fitting functions
+def linear_func(x, a, b):
+    return a * x + b
+
+def inv_sqrt_func(x, a, b):
+    # Avoid division by zero or sqrt of negative numbers
+    x_safe = np.where(x == 0, 1e-9, x) # Replace 0 with a small number
+    return a / np.sqrt(x_safe) + b
+
 # B) Representació gràfica dels resultats
 # i) Energia mitjana en funció de N
-plt.plot(Ns, mitj_E, 'o-')
+plt.figure()
+plt.plot(Ns, linear_func(Ns, *popt_mitj), '-', label=r'Ajust lineal $\langle E \rangle \propto N$', color = 'orange')
+plt.plot(Ns, mitj_E, 'o', label='Punts calculats', color = 'teal')
 plt.tick_params(direction='in')
 plt.xlabel("N")
 plt.ylabel(r'$\langle E \rangle$')
 plt.grid(True)
+
+popt_mitj, pcov_mitj = curve_fit(linear_func, Ns, mitj_E)
+plt.legend()
 plt.show()
+print(f'{popt_mitj[0]:.2f}N + {popt_mitj[1]:.2f}')
 
 # ii) Variància / fluctuació de l'energia en funció de N
-plt.plot(Ns, var_E, 'o-')
+plt.figure()
+plt.plot(Ns, linear_func(Ns, *popt_var), '-', label=r'Ajust lineal ${\sigma_E}^2 \propto N$', color = 'orange')
+plt.plot(Ns, var_E, 'o', label='Punts calculats', color = 'teal')
 plt.tick_params(direction='in')
 plt.xlabel("N")
-plt.ylabel(r'$\sigma_E^2$')
+plt.ylabel(r'${\sigma_E}^2$')
 plt.grid(True)
+
+popt_var, pcov_var = curve_fit(linear_func, Ns, var_E)
+plt.legend()
 plt.show()
+print(f'Fit: {popt_var[0]:.2f}N + {popt_var[1]:.2f}')
 
 # iii) Fluctuació RELATIVA de l'energia en funció de N
-fluct_rel = np.sqrt(var_E) / np.array(mitj_E)
+fluct_rel = np.sqrt(var_E) / mitj_E
 
-plt.plot(Ns, fluct_rel, 'o-')
+plt.figure()
+plt.plot(Ns_fit, inv_sqrt_func(Ns_fit, *popt_fluct), '-', label=r'Ajust $ \frac{\sigma_E}{\langle E \rangle}\propto \frac{1}{\sqrt{N}}$', color = 'orange')
+plt.plot(Ns, fluct_rel, 'o', label='Punts calculats', color = 'teal')
 plt.tick_params(direction='in')
 plt.xlabel("N")
 plt.ylabel(r'$\sigma_E / \langle E \rangle$')
 plt.grid(True)
+
+popt_fluct, pcov_fluct = curve_fit(inv_sqrt_func, Ns, fluct_rel, p0=[1, 0])
+Ns_fit = np.linspace(Ns.min(), Ns.max(), 500)
+plt.legend()
 plt.show()
+print(f'Fit: {popt_fluct[0]:.2f}/\u221aN + {popt_fluct[1]:.2f}')
+
 
 
 # ------------------------------------------------------------------------------------
