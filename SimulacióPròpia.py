@@ -198,28 +198,26 @@ def inv_sqrt_func(x, a, b):
 # B) Representació gràfica dels resultats
 # i) Energia mitjana en funció de N
 plt.figure()
+popt_mitj, pcov_mitj = curve_fit(linear_func, Ns, mitj_E)
 plt.plot(Ns, linear_func(Ns, *popt_mitj), '-', label=r'Ajust lineal $\langle E \rangle \propto N$', color = 'orange')
 plt.plot(Ns, mitj_E, 'o', label='Punts calculats', color = 'teal')
 plt.tick_params(direction='in')
 plt.xlabel("N")
 plt.ylabel(r'$\langle E \rangle$')
 plt.grid(True)
-
-popt_mitj, pcov_mitj = curve_fit(linear_func, Ns, mitj_E)
 plt.legend()
 plt.show()
 print(f'{popt_mitj[0]:.2f}N + {popt_mitj[1]:.2f}')
 
 # ii) Variància / fluctuació de l'energia en funció de N
 plt.figure()
+popt_var, pcov_var = curve_fit(linear_func, Ns, var_E)
 plt.plot(Ns, linear_func(Ns, *popt_var), '-', label=r'Ajust lineal ${\sigma_E}^2 \propto N$', color = 'orange')
 plt.plot(Ns, var_E, 'o', label='Punts calculats', color = 'teal')
 plt.tick_params(direction='in')
 plt.xlabel("N")
 plt.ylabel(r'${\sigma_E}^2$')
 plt.grid(True)
-
-popt_var, pcov_var = curve_fit(linear_func, Ns, var_E)
 plt.legend()
 plt.show()
 print(f'Fit: {popt_var[0]:.2f}N + {popt_var[1]:.2f}')
@@ -228,15 +226,14 @@ print(f'Fit: {popt_var[0]:.2f}N + {popt_var[1]:.2f}')
 fluct_rel = np.sqrt(var_E) / mitj_E
 
 plt.figure()
+popt_fluct, pcov_fluct = curve_fit(inv_sqrt_func, Ns, fluct_rel, p0=[1, 0])
+Ns_fit = np.linspace(Ns.min(), Ns.max(), 500)
 plt.plot(Ns_fit, inv_sqrt_func(Ns_fit, *popt_fluct), '-', label=r'Ajust $ \frac{\sigma_E}{\langle E \rangle}\propto \frac{1}{\sqrt{N}}$', color = 'orange')
 plt.plot(Ns, fluct_rel, 'o', label='Punts calculats', color = 'teal')
 plt.tick_params(direction='in')
 plt.xlabel("N")
 plt.ylabel(r'$\sigma_E / \langle E \rangle$')
 plt.grid(True)
-
-popt_fluct, pcov_fluct = curve_fit(inv_sqrt_func, Ns, fluct_rel, p0=[1, 0])
-Ns_fit = np.linspace(Ns.min(), Ns.max(), 500)
 plt.legend()
 plt.show()
 print(f'Fit: {popt_fluct[0]:.2f}/\u221aN + {popt_fluct[1]:.2f}')
