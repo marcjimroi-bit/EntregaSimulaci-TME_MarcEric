@@ -1,21 +1,18 @@
 # --- TME: TREBALL DE SIMULACIÓ ---
 # Secció 3: Creació d’una simulació pròpia
-    # Codi i comentaris per: Marc Jiménez Roig
 
 import numpy as np
 import matplotlib.pyplot as plt
-import math
 from scipy.optimize import curve_fit
-
-# Paràmetres inicials
-N = 1000
-T_0 =300                # Temperatura inicial de prova (K)
-k_B = 1.380649e-23      # Constant de Boltzmann (J K^-1)
-beta = 1/(k_B * T_0)
-energies = np.array([0,1,10])      # Nivells d'energia considerats (\epsilon = 1)
 
 # ====================================================================================
 # (1) TEST CAS INDIVIDUAL
+# Paràmetres inicials (unitats no normalitzades de prova)
+N = 1000
+T_0 =300                # Temperatura inicial de prova (K)
+k_B = 1.380649e-23      # Constant de Boltzmann (J K^-1)
+beta = 1/(k_B * T_0)    # Beta termodinàmica
+energies = np.array([0,1,10])      # Nivells d'energia considerats (\epsilon = 1)
 # Definim un array per l'estat de N partícules a temperatura T_0, que inicialment estan repartides amb igual probabilitat entre cada nivell (probabilitat = 1/3)
 estats = np.random.randint(0, 3, size=N)
 
@@ -44,6 +41,7 @@ def pas_metropolis(estats, energies, beta, N):
 
     return estats
 
+
 # B) SIMULACIÓ DE L'EVOLUCIÓ DEL SISTEMA
 # Apliquem la funció anterior i simulem els passos fins assolir un estat d'equilibri
 n_pas = 1000
@@ -52,7 +50,7 @@ for j in range(n_pas):
 
 # Ocupació mitjana en l'equilibri: Definim un nombre molt gran de mesures, les quals aplicarem a estats d'equilibri
 num_niv = np.zeros(3)
-mesures = 10000
+mesures = 10000                # Escollim un valor molt gran per millorar l'estadística
 
 # Un cop assolit l'equilibri (evolució anterior), seguim evolucionant el sistema (ara en equilibri) i mesurem la ocupació de cada nivell
 for j in range(mesures):
@@ -66,17 +64,19 @@ print(avg_occupation)
 
 # ====================================================================================
 # (2) ESTUDI EN FUNCIÓ DE LA TEMPERATURA
-# Definim un conjunt de valors equiespaiats de temperatura que cobreixin un rang prou gran per tal d'estudiar-ne la dependència.
+# Paràmetres inicials redefinits (normalització)
+N = 1000
 energies = np.array([0,1,10])           # Respecte \epsilon
 epsilon = 1                             # Per simplicitat, \epsilon = 1
-k_B = 1                                 # Per simplicitat. k_B = 1 implica \beta = 1/T, i [T] = energia
-# Conjunt de valors de temperatura (k_B*T) estudiats. 
+k_B = 1                                 # Per simplicitat. k_B = 1
+    # Definim un conjunt de valors equiespaiats de temperatura (normalitzada, t= T k_B/\epsilon) que cobreixin un rang prou gran per tal d'estudiar-ne la dependència.
 temps = np.concatenate([
-    np.linspace(0.05, 5, 50),   # Molta densitat de punts a temperatures baixes (prop de t_c)
-    np.linspace(5, 500, 50)     # Menys densitat de punts a temperatures molt altes
+    np.linspace(0.05, 5, 50),       # Molta densitat de punts a temperatures baixes (prop de t_c) per millorar la resolució
+    np.linspace(5, 500, 50)         # Menys densitat de punts a temperatures molt altes (no cal tanta resolució)
 ])
 # Emmagatzemem els resultats obtinguts per les ocupacions mitjanes a cada nivell per cada temperatura
 ocupacions = []
+
 
 # A) ESTIMACIÓ DE L'ASSOLIMENT DE L'EQUILIBRI
 # Busquem quants passos de la simulació són adequats per assolir un estat d'equilibri en un cas concret a T=T_test i extrapolem a la resta
@@ -98,24 +98,25 @@ plt.ylabel(r'Ocupació del nivell $E_1=0$')
 plt.show()
 
 # Estimació de la temperatura crítica del problema 35 T_c
-t_c = 10*epsilon/(k_B*math.log(N))
+t_c = 10*epsilon/(k_B*np.log(N))
 print(t_c)
+
 
 # B) SIMULACIONS DEL SISTEMA PER CADA VALOR DE TEMPERATURA
 for t in temps:
-    beta = 1 / (t)
+    beta = 1 / (t)          # (per k_B = 1)
 
     # Establim l'estat inicial
     estats = np.random.randint(0, 3, size=N)
 
     # Simulem l'evolució del sistema mitjançant la funció definida segons la regla de Metropolis fins assolir l'equilibri
-    n_pas = 10000
+    n_pas = 10000           # Valor escollit a partir dels resultats de l'estimació anterior
     for j in range(n_pas):
         estats = pas_metropolis(estats, energies, beta, N)
 
     # Mesurem les ocupacions dels nivells (un nombre gran de mesures permet mantenir-nos en condicions d'equilibri)
     num_niv = np.zeros(3)
-    mesures = 10000
+    mesures = 10000         # Escollim un valor molt gran per millorar l'estadística
     # Mesures de les ocupacions de cada nivell per iteracions en condicions d'equilibri
     for j in range(mesures):
         estats = pas_metropolis(estats, energies, beta, N)
@@ -125,13 +126,13 @@ for t in temps:
     avg_occ = num_niv / (mesures * N)
     ocupacions.append(avg_occ)
 
-# Representació gràfica dels nivells d'ocupació per cada T
+# Representació gràfica dels nivells d'ocupació per cada t
 resultats_ocup = np.array(ocupacions)
 
 plt.plot(temps, resultats_ocup[:, 0], label=r'$E_1=0$', color = 'darkred')
 plt.plot(temps, resultats_ocup[:, 1], label=r'$E_2=\epsilon$', color = 'darkgreen')
 plt.plot(temps, resultats_ocup[:, 2], label=r'$E_3=10\epsilon$', color = 'darkblue')
-plt.axvline(x=t_c, linestyle=':', color='black', alpha = 1, label=r'$t_{\mathrm{c}}=1$')
+plt.axvline(x=t_c, linestyle=':', color='black', alpha = 1, label=r'$t_{\mathrm{c}}\approx 1.45$')
 plt.axhline(y=1/3, linestyle='--', color='black', alpha = 0.25)
 plt.tick_params(direction='in')
 plt.xscale('log')           # Per diferenciar t_c
@@ -151,12 +152,12 @@ beta = 1/t_a
 energies = np.array([0, 1, 10])
 
 # Definim un conjunt de valors de N
-Ns = np.linspace(10,2000,20)
+Ns = np.linspace(10,2000,20, dtype=int)
 
 mitj_E = []
 var_E = []
 
-# Simulem el sistema per cada valor de N
+# A) ESTADÍSTICA PER DIFERENTS VALORS DE N
 for N in Ns:
 
     # Establim l'estat incial
@@ -183,23 +184,29 @@ for N in Ns:
     mitj_E.append(np.mean(E_vals))
     var_E.append(np.var(E_vals))  # variance = fluctuations
 
+# Expressem els resultats anteriors en forma d'array
 mitj_E = np.array(mitj_E)
 var_E = np.array(var_E)
 
-# Define fitting functions
+# Mitjançant el paquet scipy, definim les funcions d'ajust que esperem teòricament
+# Ajust lineal
 def linear_func(x, a, b):
     return a * x + b
 
+# Ajust arrel quadrada inversa (1/sqrt)
 def inv_sqrt_func(x, a, b):
     # Avoid division by zero or sqrt of negative numbers
     x_safe = np.where(x == 0, 1e-9, x) # Replace 0 with a small number
     return a / np.sqrt(x_safe) + b
 
+
 # B) Representació gràfica dels resultats
 # i) Energia mitjana en funció de N
 plt.figure()
+    # Definició, càlcul i representació de l'ajust
 popt_mitj, pcov_mitj = curve_fit(linear_func, Ns, mitj_E)
 plt.plot(Ns, linear_func(Ns, *popt_mitj), '-', label=r'Ajust lineal $\langle E \rangle \propto N$', color = 'orange')
+    # Punts calculats en la simulació
 plt.plot(Ns, mitj_E, 'o', label='Punts calculats', color = 'teal')
 plt.tick_params(direction='in')
 plt.xlabel("N")
@@ -211,8 +218,10 @@ print(f'{popt_mitj[0]:.2f}N + {popt_mitj[1]:.2f}')
 
 # ii) Variància / fluctuació de l'energia en funció de N
 plt.figure()
+    # Definició, càlcul i representació de l'ajust
 popt_var, pcov_var = curve_fit(linear_func, Ns, var_E)
 plt.plot(Ns, linear_func(Ns, *popt_var), '-', label=r'Ajust lineal ${\sigma_E}^2 \propto N$', color = 'orange')
+    # Punts calculats en la simulació
 plt.plot(Ns, var_E, 'o', label='Punts calculats', color = 'teal')
 plt.tick_params(direction='in')
 plt.xlabel("N")
@@ -226,9 +235,11 @@ print(f'Fit: {popt_var[0]:.2f}N + {popt_var[1]:.2f}')
 fluct_rel = np.sqrt(var_E) / mitj_E
 
 plt.figure()
+    # Definició, càlcul i representació de l'ajust
 popt_fluct, pcov_fluct = curve_fit(inv_sqrt_func, Ns, fluct_rel, p0=[1, 0])
-Ns_fit = np.linspace(Ns.min(), Ns.max(), 500)
+Ns_fit = np.linspace(Ns.min(), Ns.max(), 500)       # Augmentem la resolució per obtenir una corba més suau (especialment a l'inici)
 plt.plot(Ns_fit, inv_sqrt_func(Ns_fit, *popt_fluct), '-', label=r'Ajust $ \frac{\sigma_E}{\langle E \rangle}\propto \frac{1}{\sqrt{N}}$', color = 'orange')
+    # Punts calculats en la simulació
 plt.plot(Ns, fluct_rel, 'o', label='Punts calculats', color = 'teal')
 plt.tick_params(direction='in')
 plt.xlabel("N")
