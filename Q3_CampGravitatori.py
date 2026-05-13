@@ -81,7 +81,7 @@ for vz in range(-3000, 3001+dvz, dvz):
     theory_vz.plot(vz, (deltavz/dvz)*Natoms*sqrt(mass/(2*pi*k*T))*exp(-0.5*mass*(vz**2)/(k*T))*dvz)
 
 accumvz = [[-3000 + deltavz*(i+.5), 0] for i in range(int(6000/deltavz))]
-vzdist = gvbars(color=color.red, delta=deltavz)
+vzdist = gvbars(color=vector(0.88,0.5,0.76), delta=deltavz)
 
 # Gràfic de les posicions Z
 deltaz = 0.05
@@ -93,7 +93,7 @@ def barz(z):
     return index
 
 gz = graph(width=win, height=0.4*win, xmax=L/2, xmin=-L/2, align='left', xtitle='Z position, m', ytitle='Number of atoms')
-theory_z = gcurve(color=color.orange, width=2)
+theory_z = gcurve(color=color.blue, width=2)
 dz = 0.01
 # Curva teòrica: Distribució baromètrica amb factor de normalització
 z0_factor = Natoms * (mass * g_eff / (k * T)) / (1 - exp(-mass * g_eff * L / (k * T)))
@@ -101,7 +101,7 @@ for z in arange(-L/2, L/2 + dz, dz):
     theory_z.plot(z, deltaz * z0_factor * exp(-mass * g_eff * (z + L/2) / (k * T)))
 
 accumz = [[-L/2 + deltaz*(i+0.5), 0] for i in range(int(L/deltaz))]
-zdist = gvbars(color=color.green, delta=deltaz)
+zdist = gvbars(color=color.orange, delta=deltaz)
 
 def checkCollisions():
     hitlist = []
