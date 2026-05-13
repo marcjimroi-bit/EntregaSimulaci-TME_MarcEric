@@ -108,7 +108,7 @@ def barE(E):
     return int(E/dE)
 
 gE = graph(width=win, height=0.4*win, align='right',
-    xtitle='Energia (J)', ytitle="Nombre d'àtoms", xmax=Emax, xmin=0, ymin=0, ymax=ymax_E*1.2)
+    xtitle='energy, J', ytitle='Number of atoms', xmax=Emax, xmin=0, ymin=0, ymax=ymax_E*1.2)
 
 Edist = gvbars(color=color.green, delta=dE)
 
@@ -160,6 +160,7 @@ for i in range(Natoms):
         Ehisto[barE(E)] += 1
 
 while True:
+
     for i in range(Natoms):
         if random() < prob_bany:
             v_antic = p[i].mag / mass
