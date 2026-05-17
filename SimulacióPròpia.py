@@ -154,6 +154,7 @@ energies = np.array([0, 1, 10])
 # Definim un conjunt de valors de N
 Ns = np.linspace(10,2000,20, dtype=int)
 
+# Definim les llistes pels valors mitjans i variàncies de l'energia
 mitj_E = []
 var_E = []
 
@@ -182,7 +183,7 @@ for N in Ns:
 
     # Calculem el valor mitjà i variància de l'energia
     mitj_E.append(np.mean(E_vals))
-    var_E.append(np.var(E_vals))  # variance = fluctuations
+    var_E.append(np.var(E_vals))
 
 # Expressem els resultats anteriors en forma d'array
 mitj_E = np.array(mitj_E)
@@ -195,8 +196,8 @@ def linear_func(x, a, b):
 
 # Ajust arrel quadrada inversa (1/sqrt)
 def inv_sqrt_func(x, a, b):
-    # Avoid division by zero or sqrt of negative numbers
-    x_safe = np.where(x == 0, 1e-9, x) # Replace 0 with a small number
+    # Com a precaució evitem arrels de nombres negatius o zero
+    x_safe = np.where(x == 0, 1e-9, x)
     return a / np.sqrt(x_safe) + b
 
 
